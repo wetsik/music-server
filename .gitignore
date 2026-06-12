@@ -1,0 +1,6 @@
+# This repo (music-server) should contain ONLY the server/ folder.
+# Ignore everything at the root...
+/*
+# ...except the items we want to publish:
+!/.gitignore
+!/server/

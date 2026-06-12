@@ -1,0 +1,17 @@
+# Render Blueprint. Push this repo to GitHub, then on Render:
+# New + → Blueprint → pick the repo. It reads this file.
+services:
+  - type: web
+    name: westforge-audio
+    runtime: docker
+    plan: free
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    healthCheckPath: /health
+    envVars:
+      - key: MAX_CACHE_MB
+        value: "512" # Render Free disk is small + ephemeral; keep it modest
+      - key: ACCESS_TOKEN
+        generateValue: true # random secret; copy it into the app config
+      # - key: COOKIES_CONTENT
+      #   sync: false        # paste cookies.txt here if YouTube blocks the IP

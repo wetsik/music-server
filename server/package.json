@@ -1,0 +1,16 @@
+{
+  "name": "westforge-audio-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "yt-dlp audio resolver/proxy for WestForge Music — gives the app a plain audio stream so native playback works in background.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
