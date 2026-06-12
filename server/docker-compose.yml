@@ -1,4 +1,5 @@
 # For VPS / home server. On Render you don't need this — see README.
+# 1) cp .env.example .env   2) put a token into .env   3) docker compose up -d --build
 services:
   audio:
     build: .
@@ -7,7 +8,5 @@ services:
       - "8080:8080"
     volumes:
       - ./cache:/data/cache
-    environment:
-      - MAX_CACHE_MB=4096
-      # - ACCESS_TOKEN=change-me-to-a-long-random-string
-      # - COOKIES_CONTENT=...   # optional, if YouTube blocks the server IP
+    env_file:
+      - .env
