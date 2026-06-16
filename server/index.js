@@ -210,6 +210,38 @@ app.get("/prefetch/:id", checkToken, async (req, res) => {
   }
 });
 
+// Report which of the given ids are actually YouTube Shorts. A real Short stays
+// on /shorts/<id>; a normal video redirects to /watch. Used by the native app
+// to filter Shorts out of search results (the YouTube API has no Shorts flag).
+app.get("/shorts", checkToken, async (req, res) => {
+  const ids = String(req.query.ids || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => ID_RE.test(s));
+  if (!ids.length) return res.json({ shorts: [] });
+
+  const shorts = [];
+  const queue = [...ids];
+  const worker = async () => {
+    while (queue.length) {
+      const id = queue.shift();
+      try {
+        const r = await fetch(`https://www.youtube.com/shorts/${id}`, {
+          headers: { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
+          signal: AbortSignal.timeout(6000),
+        });
+        try { await r.body?.cancel(); } catch { /* ignore */ }
+        // After following redirects: still /shorts/ → Short; else → normal video.
+        if (r.url.includes("/shorts/")) shorts.push(id);
+      } catch {
+        /* network error — don't classify as a Short */
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: 8 }, worker));
+  res.json({ shorts });
+});
+
 app.listen(PORT, () => {
   console.log(`westforge-audio-server :${PORT}`);
   console.log(`  cache=${CACHE_DIR} (max ${MAX_CACHE_MB} MB)`);
