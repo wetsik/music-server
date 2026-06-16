@@ -16,6 +16,10 @@ const JS_RUNTIME = process.env.YTDLP_JS_RUNTIME || "";
 // Base URL of the bgutil PoToken provider sidecar. When set, yt-dlp fetches a
 // PoToken from it to pass YouTube's bot check (no manual cookie refresh).
 const POT_BASEURL = process.env.YTDLP_POT_BASEURL || "";
+// YouTube's nsig challenge now needs yt-dlp's EJS solver script, which it
+// downloads on demand from GitHub (cached). Without this, extraction fails with
+// "n challenge solving failed". Set empty to disable.
+const REMOTE_COMPONENTS = process.env.YTDLP_REMOTE_COMPONENTS || "ejs:github";
 const MAX_CACHE_MB = Number(process.env.MAX_CACHE_MB || 2048);
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN || ""; // if set, requests must carry it
 const ALLOW_ORIGIN = process.env.ALLOW_ORIGIN || "*";
@@ -97,6 +101,7 @@ function download(id) {
       "--quiet",
       "-o", out,
     ];
+    if (REMOTE_COMPONENTS) args.push("--remote-components", REMOTE_COMPONENTS);
     if (JS_RUNTIME) args.push("--js-runtimes", JS_RUNTIME);
     if (POT_BASEURL) {
       args.push("--extractor-args", `youtubepot-bgutilhttp:base_url=${POT_BASEURL}`);
