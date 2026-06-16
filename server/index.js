@@ -13,6 +13,9 @@ const FORMAT = process.env.YTDLP_FORMAT || "bestaudio[ext=m4a]/bestaudio";
 // yt-dlp needs a JS runtime for YouTube. The Docker image ships Node, so we
 // point yt-dlp at it (`node`); leave empty to use yt-dlp's default (deno).
 const JS_RUNTIME = process.env.YTDLP_JS_RUNTIME || "";
+// Base URL of the bgutil PoToken provider sidecar. When set, yt-dlp fetches a
+// PoToken from it to pass YouTube's bot check (no manual cookie refresh).
+const POT_BASEURL = process.env.YTDLP_POT_BASEURL || "";
 const MAX_CACHE_MB = Number(process.env.MAX_CACHE_MB || 2048);
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN || ""; // if set, requests must carry it
 const ALLOW_ORIGIN = process.env.ALLOW_ORIGIN || "*";
@@ -95,6 +98,9 @@ function download(id) {
       "-o", out,
     ];
     if (JS_RUNTIME) args.push("--js-runtimes", JS_RUNTIME);
+    if (POT_BASEURL) {
+      args.push("--extractor-args", `youtubepot-bgutilhttp:base_url=${POT_BASEURL}`);
+    }
     if (COOKIES_FILE) args.push("--cookies", COOKIES_FILE);
     args.push(`https://www.youtube.com/watch?v=${id}`);
 

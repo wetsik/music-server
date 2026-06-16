@@ -10,3 +10,14 @@ services:
       - ./cache:/data/cache
     env_file:
       - .env
+    environment:
+      # Reach the PoToken sidecar by its compose service name.
+      - YTDLP_POT_BASEURL=http://bgutil-provider:4416
+    depends_on:
+      - bgutil-provider
+
+  # Generates YouTube PoTokens locally so yt-dlp passes the bot check without
+  # constantly re-exporting cookies. Internal only — no published port.
+  bgutil-provider:
+    image: brainicism/bgutil-ytdlp-pot-provider:latest
+    restart: unless-stopped
