@@ -242,6 +242,53 @@ app.get("/shorts", checkToken, async (req, res) => {
   res.json({ shorts });
 });
 
+// "Radio" / wave: given a seed video id, return similar songs from YouTube's
+// own Mix playlist (RD<id>) via yt-dlp. This is the recommendation graph that
+// powers "play similar next" without us running any ML.
+app.get("/radio", checkToken, (req, res) => {
+  const id = String(req.query.id || "");
+  if (!ID_RE.test(id)) return res.status(400).json({ error: "bad video id" });
+  const limit = Math.max(5, Math.min(Number(req.query.limit) || 25, 50));
+
+  const args = [
+    "--flat-playlist",
+    "--playlist-end", String(limit),
+    "--no-warnings",
+    "--print", "%(id)s\t%(duration)s\t%(channel)s\t%(title)s",
+  ];
+  if (REMOTE_COMPONENTS) args.push("--remote-components", REMOTE_COMPONENTS);
+  if (JS_RUNTIME) args.push("--js-runtimes", JS_RUNTIME);
+  if (COOKIES_FILE) args.push("--cookies", COOKIES_FILE);
+  args.push(`https://www.youtube.com/watch?v=${id}&list=RD${id}`);
+
+  const proc = spawn(YTDLP, args);
+  let out = "";
+  let err = "";
+  proc.stdout.on("data", (d) => (out += d.toString()));
+  proc.stderr.on("data", (d) => (err += d.toString()));
+  proc.on("error", (e) => res.status(502).json({ error: String(e.message || e) }));
+  proc.on("close", (code) => {
+    const tracks = out
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [vid, dur, channel, ...rest] = line.split("\t");
+        return {
+          id: vid,
+          duration: Number(dur) || 0,
+          artist: (channel || "").replace(/\s*-\s*Topic$/i, "").trim(),
+          title: rest.join("\t") || vid,
+        };
+      })
+      .filter((t) => ID_RE.test(t.id) && t.id !== id);
+    if (!tracks.length && code !== 0) {
+      return res.status(502).json({ error: err.slice(-300) });
+    }
+    res.json({ tracks });
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`westforge-audio-server :${PORT}`);
   console.log(`  cache=${CACHE_DIR} (max ${MAX_CACHE_MB} MB)`);
