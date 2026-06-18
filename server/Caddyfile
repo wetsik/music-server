@@ -1,0 +1,7 @@
+{
+	email kudfidin.hasanov@gmail.com
+}
+
+api.westforge.dev {
+	reverse_proxy audio:8080
+}
